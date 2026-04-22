@@ -1,0 +1,560 @@
+/*
+ * ============================================================
+ *   HOSPITAL MANAGEMENT SYSTEM
+ *   Header used : <iostream> ONLY
+ *   OOP Topics  : Inheritance, Polymorphism, Virtual Functions,
+ *                 Abstract Classes, Raw Pointers, Derived Classes
+ * ============================================================
+ */
+
+#include <iostream>
+using namespace std;
+
+// ─────────────────────────────────────────────────────────────
+// UTILITY
+// ─────────────────────────────────────────────────────────────
+
+void printLine(char c = '-', int n = 65) {
+    for (int i = 0; i < n; i++) cout << c;
+    cout << "\n";
+}
+
+void printHeader(const char* title) {
+    cout << "\n";
+    printLine('=');
+    cout << "  " << title << "\n";
+    printLine('=');
+}
+
+void col(const char* str, int width) {
+    int len = 0;
+    while (str[len] != '\0') len++;
+    cout << str;
+    for (int i = len; i < width; i++) cout << ' ';
+}
+
+void colInt(int val, int width) {
+    int tmp = (val == 0) ? 1 : 0, n = val;
+    while (n != 0) { n /= 10; tmp++; }
+    cout << val;
+    for (int i = tmp; i < width; i++) cout << ' ';
+}
+
+void myCopy(char* dest, const char* src, int maxLen) {
+    int i = 0;
+    while (src[i] != '\0' && i < maxLen - 1) { dest[i] = src[i]; i++; }
+    dest[i] = '\0';
+}
+
+// ─────────────────────────────────────────────────────────────
+// ABSTRACT BASE CLASS : Person
+// ─────────────────────────────────────────────────────────────
+class Person {
+protected:
+    int  id;
+    char name[50];
+    int  age;
+    char gender[10];
+    char phone[15];
+
+public:
+    Person(int id, const char* name, int age,
+           const char* gender, const char* phone) {
+        this->id  = id;
+        this->age = age;
+        myCopy(this->name,   name,   50);
+        myCopy(this->gender, gender, 10);
+        myCopy(this->phone,  phone,  15);
+    }
+
+    virtual ~Person() {}
+
+    virtual void        displayInfo() const = 0;
+    virtual const char* getRole()     const = 0;
+
+    int         getId()   const { return id; }
+    const char* getName() const { return name; }
+    int         getAge()  const { return age; }
+};
+
+// ─────────────────────────────────────────────────────────────
+// DERIVED CLASS : Patient
+// ─────────────────────────────────────────────────────────────
+class Patient : public Person {
+private:
+    char   disease[50];
+    char   admDate[15];
+    bool   admitted;
+    double bill;
+
+public:
+    Patient(int id, const char* name, int age,
+            const char* gender, const char* phone,
+            const char* disease, const char* date)
+        : Person(id, name, age, gender, phone) {
+        myCopy(this->disease, disease, 50);
+        myCopy(this->admDate, date,    15);
+        admitted = true;
+        bill     = 0.0;
+    }
+
+    void displayInfo() const override {
+        colInt(id, 6);
+        col(name, 22); colInt(age, 5);
+        col(gender, 9); col(disease, 18);
+        col(admDate, 14);
+        cout << (admitted ? "Admitted" : "Discharged") << "\n";
+    }
+
+    const char* getRole() const override { return "Patient"; }
+
+    void        addBill(double a)  { bill += a; }
+    double      getBill()    const { return bill; }
+    bool        isAdmitted() const { return admitted; }
+    void        discharge()        { admitted = false; }
+    const char* getDisease() const { return disease; }
+
+    void printBill() const {
+        printLine();
+        cout << "  Patient  : " << name << "  (ID: " << id << ")\n";
+        cout << "  Disease  : " << disease << "\n";
+        cout << "  Admitted : " << admDate << "\n";
+        cout << "  Status   : " << (admitted ? "Admitted" : "Discharged") << "\n";
+        cout << "  Bill     : Rs. " << bill << "\n";
+        printLine();
+    }
+};
+
+// ─────────────────────────────────────────────────────────────
+// ABSTRACT DERIVED CLASS : Staff
+// ─────────────────────────────────────────────────────────────
+class Staff : public Person {
+protected:
+    char   dept[30];
+    double salary;
+
+public:
+    Staff(int id, const char* name, int age,
+          const char* gender, const char* phone,
+          const char* dept, double salary)
+        : Person(id, name, age, gender, phone) {
+        myCopy(this->dept, dept, 30);
+        this->salary = salary;
+    }
+
+    virtual ~Staff() {}
+
+    const char* getDept()   const { return dept; }
+    double      getSalary() const { return salary; }
+
+    virtual void        displayInfo() const override = 0;
+    virtual const char* getRole()     const override = 0;
+
+    virtual void performDuty() const {
+        cout << name << " is performing general hospital duties.\n";
+    }
+};
+
+// ─────────────────────────────────────────────────────────────
+// DERIVED CLASS : Doctor
+// ─────────────────────────────────────────────────────────────
+class Doctor : public Staff {
+private:
+    char spec[40];
+    int  exp;
+
+public:
+    Doctor(int id, const char* name, int age,
+           const char* gender, const char* phone,
+           const char* dept, double salary,
+           const char* spec, int exp)
+        : Staff(id, name, age, gender, phone, dept, salary) {
+        myCopy(this->spec, spec, 40);
+        this->exp = exp;
+    }
+
+    void displayInfo() const override {
+        colInt(id, 6); col(name, 22); colInt(age, 5);
+        col(spec, 22); col(dept, 18); colInt(exp, 8);
+        cout << "Rs. " << salary << "\n";
+    }
+
+    const char* getRole() const override { return "Doctor"; }
+
+    void performDuty() const override {
+        cout << "Dr. " << name << " (" << spec
+             << ") is examining patients in " << dept << ".\n";
+    }
+
+    const char* getSpec() const { return spec; }
+    int         getExp()  const { return exp; }
+};
+
+// ─────────────────────────────────────────────────────────────
+// DERIVED CLASS : Nurse
+// ─────────────────────────────────────────────────────────────
+class Nurse : public Staff {
+private:
+    char shift[15];
+
+public:
+    Nurse(int id, const char* name, int age,
+          const char* gender, const char* phone,
+          const char* dept, double salary, const char* shift)
+        : Staff(id, name, age, gender, phone, dept, salary) {
+        myCopy(this->shift, shift, 15);
+    }
+
+    void displayInfo() const override {
+        colInt(id, 6); col(name, 22); colInt(age, 5);
+        col(dept, 22); col(shift, 12);
+        cout << "Rs. " << salary << "\n";
+    }
+
+    const char* getRole() const override { return "Nurse"; }
+
+    void performDuty() const override {
+        cout << "Nurse " << name << " is on " << shift
+             << " shift in " << dept << " ward.\n";
+    }
+};
+
+// ─────────────────────────────────────────────────────────────
+// DERIVED CLASS : Receptionist
+// ─────────────────────────────────────────────────────────────
+class Receptionist : public Staff {
+private:
+    char desk[30];
+
+public:
+    Receptionist(int id, const char* name, int age,
+                 const char* gender, const char* phone,
+                 const char* dept, double salary, const char* desk)
+        : Staff(id, name, age, gender, phone, dept, salary) {
+        myCopy(this->desk, desk, 30);
+    }
+
+    void displayInfo() const override {
+        colInt(id, 6); col(name, 22); colInt(age, 5);
+        col(dept, 22); col(desk, 18);
+        cout << "Rs. " << salary << "\n";
+    }
+
+    const char* getRole() const override { return "Receptionist"; }
+
+    void performDuty() const override {
+        cout << "Receptionist " << name
+             << " is managing check-ins at " << desk << ".\n";
+    }
+};
+
+// ─────────────────────────────────────────────────────────────
+// CLASS : Appointment  (uses raw Patient* and Doctor* pointers)
+// ─────────────────────────────────────────────────────────────
+class Appointment {
+private:
+    int      appId;
+    Patient* patient;
+    Doctor*  doctor;
+    char     date[15];
+    char     time[10];
+    char     notes[60];
+
+public:
+    Appointment(int id, Patient* p, Doctor* d,
+                const char* date, const char* time,
+                const char* notes) {
+        appId   = id;
+        patient = p;
+        doctor  = d;
+        myCopy(this->date,  date,  15);
+        myCopy(this->time,  time,  10);
+        myCopy(this->notes, notes, 60);
+    }
+
+    void display() const {
+        colInt(appId, 6);
+        col(patient->getName(), 22);
+        char dname[55];
+        dname[0]='D'; dname[1]='r'; dname[2]='.'; dname[3]=' '; dname[4]='\0';
+        int i = 4;
+        const char* dn = doctor->getName();
+        for (int j = 0; dn[j] != '\0' && i < 54; j++) dname[i++] = dn[j];
+        dname[i] = '\0';
+        col(dname, 24); col(date, 13); col(time, 10);
+        cout << notes << "\n";
+    }
+
+    Patient* getPatient() const { return patient; }
+    Doctor*  getDoctor()  const { return doctor;  }
+};
+
+// ─────────────────────────────────────────────────────────────
+// CLASS : Hospital
+// ─────────────────────────────────────────────────────────────
+class Hospital {
+private:
+    char hospitalName[50];
+    static const int MAX = 20;
+
+    Patient*      patients[MAX];
+    Doctor*       doctors[MAX];
+    Nurse*        nurses[MAX];
+    Receptionist* receptions[MAX];
+    Appointment*  appointments[MAX];
+
+    int pc, dc, nc, rc, ac;
+    int nextPid, nextSid, nextAid;
+
+public:
+    Hospital(const char* name) {
+        myCopy(hospitalName, name, 50);
+        pc = dc = nc = rc = ac = 0;
+        nextPid = 1001; nextSid = 2001; nextAid = 3001;
+        for (int i = 0; i < MAX; i++) {
+            patients[i] = NULL; doctors[i]     = NULL;
+            nurses[i]   = NULL; receptions[i]  = NULL;
+            appointments[i] = NULL;
+        }
+    }
+
+    ~Hospital() {
+        for (int i = 0; i < pc; i++) delete patients[i];
+        for (int i = 0; i < dc; i++) delete doctors[i];
+        for (int i = 0; i < nc; i++) delete nurses[i];
+        for (int i = 0; i < rc; i++) delete receptions[i];
+        for (int i = 0; i < ac; i++) delete appointments[i];
+    }
+
+    void seedData() {
+        doctors[dc++] = new Doctor(nextSid++, "Arjun Sharma", 45,
+            "Male",   "9876543210", "Cardiology",  120000, "Cardiologist",  18);
+        doctors[dc++] = new Doctor(nextSid++, "Priya Nair",   38,
+            "Female", "9876543211", "Neurology",   115000, "Neurologist",   12);
+        doctors[dc++] = new Doctor(nextSid++, "Ravi Kumar",   52,
+            "Male",   "9876543212", "Orthopedics", 110000, "Ortho Surgeon", 22);
+
+        nurses[nc++] = new Nurse(nextSid++, "Meena Iyer",  29,
+            "Female", "9876543220", "Cardiology", 45000, "Morning");
+        nurses[nc++] = new Nurse(nextSid++, "Suresh Babu", 34,
+            "Male",   "9876543221", "Neurology",  47000, "Night");
+
+        receptions[rc++] = new Receptionist(nextSid++, "Anita Rao", 27,
+            "Female", "9876543230", "Admin", 38000, "Main Lobby");
+
+        patients[pc++] = new Patient(nextPid++, "Karthik Venkat",  55,
+            "Male",   "9000001111", "Hypertension", "2024-01-10");
+        patients[pc++] = new Patient(nextPid++, "Lakshmi Devi",    42,
+            "Female", "9000002222", "Migraine",     "2024-01-11");
+        patients[pc++] = new Patient(nextPid++, "Mohammed Farhan", 30,
+            "Male",   "9000003333", "Fracture",     "2024-01-12");
+
+        patients[0]->addBill(5000); patients[0]->addBill(2500);
+        patients[1]->addBill(3200);
+        patients[2]->addBill(8000);
+
+        appointments[ac++] = new Appointment(nextAid++,
+            patients[0], doctors[0], "2024-01-15", "10:00AM", "Follow-up ECG");
+        appointments[ac++] = new Appointment(nextAid++,
+            patients[1], doctors[1], "2024-01-15", "11:30AM", "MRI review");
+        appointments[ac++] = new Appointment(nextAid++,
+            patients[2], doctors[2], "2024-01-16", "09:00AM", "X-Ray review");
+    }
+
+    void displayPatients() const {
+        printHeader("ALL PATIENTS");
+        col("ID",6); col("Name",22); col("Age",5); col("Gender",9);
+        col("Disease",18); col("Admitted",14); cout << "Status\n";
+        printLine();
+        for (int i = 0; i < pc; i++) patients[i]->displayInfo();
+    }
+
+    void displayDoctors() const {
+        printHeader("ALL DOCTORS");
+        col("ID",6); col("Name",22); col("Age",5); col("Specialization",22);
+        col("Dept",18); col("Exp",8); cout << "Salary\n";
+        printLine();
+        for (int i = 0; i < dc; i++) doctors[i]->displayInfo();
+    }
+
+    void displayNurses() const {
+        printHeader("ALL NURSES");
+        col("ID",6); col("Name",22); col("Age",5);
+        col("Dept",22); col("Shift",12); cout << "Salary\n";
+        printLine();
+        for (int i = 0; i < nc; i++) nurses[i]->displayInfo();
+    }
+
+    void displayReceptionists() const {
+        printHeader("ALL RECEPTIONISTS");
+        col("ID",6); col("Name",22); col("Age",5);
+        col("Dept",22); col("Desk",18); cout << "Salary\n";
+        printLine();
+        for (int i = 0; i < rc; i++) receptions[i]->displayInfo();
+    }
+
+    void displayAppointments() const {
+        printHeader("ALL APPOINTMENTS");
+        col("ID",6); col("Patient",22); col("Doctor",24);
+        col("Date",13); col("Time",10); cout << "Notes\n";
+        printLine();
+        for (int i = 0; i < ac; i++) appointments[i]->display();
+    }
+
+    void staffDutyRoster() const {
+        printHeader("STAFF DUTY ROSTER  -  Polymorphism Demo");
+        Staff* all[MAX * 3];
+        int total = 0;
+        for (int i = 0; i < dc; i++) all[total++] = doctors[i];
+        for (int i = 0; i < nc; i++) all[total++] = nurses[i];
+        for (int i = 0; i < rc; i++) all[total++] = receptions[i];
+        for (int i = 0; i < total; i++) {
+            cout << "[" << all[i]->getRole() << "] ";
+            all[i]->performDuty();
+        }
+    }
+
+    void displayAllBills() const {
+        printHeader("PATIENT BILLING");
+        for (int i = 0; i < pc; i++) patients[i]->printBill();
+    }
+
+    Patient* findPatient(int id) const {
+        for (int i = 0; i < pc; i++)
+            if (patients[i]->getId() == id) return patients[i];
+        return NULL;
+    }
+
+    Doctor* findDoctor(int id) const {
+        for (int i = 0; i < dc; i++)
+            if (doctors[i]->getId() == id) return doctors[i];
+        return NULL;
+    }
+
+    void addPatient(const char* name, int age, const char* gender,
+                    const char* phone, const char* disease, const char* date) {
+        if (pc >= MAX) { cout << "Patient list full!\n"; return; }
+        patients[pc++] = new Patient(nextPid++, name, age, gender, phone, disease, date);
+        cout << "Patient added with ID " << (nextPid - 1) << "\n";
+    }
+
+    void bookAppointment(int pid, int did,
+                         const char* date, const char* time, const char* notes) {
+        if (ac >= MAX) { cout << "Appointments full!\n"; return; }
+        Patient* p = findPatient(pid);
+        Doctor*  d = findDoctor(did);
+        if (!p) { cout << "Patient not found!\n"; return; }
+        if (!d) { cout << "Doctor not found!\n";  return; }
+        appointments[ac++] = new Appointment(nextAid++, p, d, date, time, notes);
+        cout << "Appointment booked successfully.\n";
+    }
+
+    void dischargePatient(int id) {
+        Patient* p = findPatient(id);
+        if (p) { p->discharge(); cout << p->getName() << " discharged.\n"; }
+        else   cout << "Patient not found!\n";
+    }
+
+    void addBill(int id, double amt) {
+        Patient* p = findPatient(id);
+        if (p) { p->addBill(amt); cout << "Bill added.\n"; }
+        else   cout << "Patient not found!\n";
+    }
+
+    void displaySummary() const {
+        printHeader("HOSPITAL SUMMARY");
+        cout << "  Hospital       : " << hospitalName << "\n";
+        cout << "  Patients       : " << pc << "\n";
+        cout << "  Doctors        : " << dc << "\n";
+        cout << "  Nurses         : " << nc << "\n";
+        cout << "  Receptionists  : " << rc << "\n";
+        cout << "  Appointments   : " << ac << "\n";
+        double total = 0;
+        for (int i = 0; i < pc; i++) total += patients[i]->getBill();
+        cout << "  Total Revenue  : Rs. " << total << "\n";
+        printLine();
+    }
+};
+
+// ─────────────────────────────────────────────────────────────
+// MAIN
+// ─────────────────────────────────────────────────────────────
+int main() {
+    Hospital hospital("City Care Hospital");
+    hospital.seedData();
+
+    int choice;
+    do {
+        cout << "\n";
+        printLine('=');
+        cout << "   CITY CARE HOSPITAL  -  MANAGEMENT SYSTEM\n";
+        printLine('=');
+        cout << "  1.  View All Patients\n";
+        cout << "  2.  View All Doctors\n";
+        cout << "  3.  View All Nurses\n";
+        cout << "  4.  View All Receptionists\n";
+        cout << "  5.  View All Appointments\n";
+        cout << "  6.  Add New Patient\n";
+        cout << "  7.  Book Appointment\n";
+        cout << "  8.  Add Bill to Patient\n";
+        cout << "  9.  Discharge Patient\n";
+        cout << "  10. View All Bills\n";
+        cout << "  11. Staff Duty Roster (Polymorphism)\n";
+        cout << "  12. Hospital Summary\n";
+        cout << "  0.  Exit\n";
+        printLine();
+        cout << "  Choice: ";
+        cin >> choice;
+
+        switch (choice) {
+            case 1: hospital.displayPatients();      break;
+            case 2: hospital.displayDoctors();       break;
+            case 3: hospital.displayNurses();        break;
+            case 4: hospital.displayReceptionists(); break;
+            case 5: hospital.displayAppointments();  break;
+            case 6: {
+                char nm[50], gn[10], ph[15], ds[50], dt[15];
+                int ag;
+                cout << "Name    : "; cin >> nm;
+                cout << "Age     : "; cin >> ag;
+                cout << "Gender  : "; cin >> gn;
+                cout << "Phone   : "; cin >> ph;
+                cout << "Disease : "; cin >> ds;
+                cout << "Date    : "; cin >> dt;
+                hospital.addPatient(nm, ag, gn, ph, ds, dt);
+                break;
+            }
+            case 7: {
+                int pid, did;
+                char dt[15], tm[10], nt[60];
+                cout << "Patient ID : "; cin >> pid;
+                cout << "Doctor ID  : "; cin >> did;
+                cout << "Date       : "; cin >> dt;
+                cout << "Time       : "; cin >> tm;
+                cout << "Notes      : "; cin >> nt;
+                hospital.bookAppointment(pid, did, dt, tm, nt);
+                break;
+            }
+            case 8: {
+                int id; double amt;
+                cout << "Patient ID : "; cin >> id;
+                cout << "Amount Rs. : "; cin >> amt;
+                hospital.addBill(id, amt);
+                break;
+            }
+            case 9: {
+                int id;
+                cout << "Patient ID : "; cin >> id;
+                hospital.dischargePatient(id);
+                break;
+            }
+            case 10: hospital.displayAllBills();  break;
+            case 11: hospital.staffDutyRoster();  break;
+            case 12: hospital.displaySummary();   break;
+            case 0:  cout << "\n  Goodbye!\n\n"; break;
+            default: cout << "  Invalid choice.\n";
+        }
+    } while (choice != 0);
+
+    return 0;
+}
